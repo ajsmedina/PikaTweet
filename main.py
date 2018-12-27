@@ -26,18 +26,31 @@ print(tweet)
 
 words = tweet.split(' ')
 syllables = []
-pucntuation = {}
+word_info = []
 
 for index, word in enumerate(words):
+    info = {'punctuation_before': '', 'punctuation_after': '', 'capital': False, 'capslock': False}
 
+    if word.isupper():
+        info['capslock'] = True
+
+    before = True
     for letter in word:
-        if not (letter.isalnum() or letter == "'"):
-            pucntuation[index] = letter
+        if not (letter.isalpha() or letter == "’"):
+            if before:
+                info['punctuation_before'] += letter
+            else:
+                info['punctuation_after'] += letter
+        elif before:
+            if letter.isalpha() and letter.isupper():
+                info['capital'] = True
+            before = False
 
+    word_info.append(info)
     word_to_count = re.sub(r"[^A-Za-z']+", '', word)
 
     if word_to_count == '':
-        syllables.append(word)
+        syllables.append(-1)
     else:
 
         response = requests.get(f"https://wordsapiv1.p.rapidapi.com/words/{word_to_count}/",
@@ -51,20 +64,21 @@ for index, word in enumerate(words):
 
 final_tweet = ''
 for index, word in enumerate(syllables):
+    final_tweet += word_info[index]['punctuation_before']
     # TODO: automate this based on my rules
-    if word == 1:
-        final_tweet += 'pi'
-    elif word == 2:
-        final_tweet += 'pika'
-    elif word == 3:
-        final_tweet += 'pikachu'
-    elif word == 4:
-        final_tweet += 'pikapika'
-    elif word != -1:
-        final_tweet += words[index]
 
-    if index in pucntuation:
-        final_tweet += pucntuation[index]
+    if word > 0:
+        final_tweet += 'P' if word_info[index]['capital'] else 'p'
+        if word == 1:
+            final_tweet += 'I' if word_info[index]['capslock'] else 'i'
+        elif word == 2:
+            final_tweet += 'ika'
+        elif word == 3:
+            final_tweet += 'ikachu'
+        elif word == 4:
+            final_tweet += 'ikapika'
+
+    final_tweet += word_info[index]['punctuation_after']
     final_tweet += ' '
 
 print(final_tweet)
