@@ -1,16 +1,23 @@
 import json
+import os
 import re
 from html import unescape
 
 import requests
 import twitter
 
-headers = {'X-RapidAPI-Key': '81ca78c963msh0d128dc3941a7a7p15fc23jsn4c4203c0863a'}
+RAPID_API_KEY = os.environ['RAPID_API_KEY']
+TWITTER_CONSUMER = os.environ['TWITTER_CONSUMER']
+TWITTER_CONSUMER_SECRET = os.environ['TWITTER_CONSUMER_SECRET']
+TWITTER_ACCESS = os.environ['TWITTER_ACCESS']
+TWITTER_ACCESS_SECRET = os.environ['TWITTER_ACCESS_SECRET']
 
-api = twitter.Api(consumer_key='KmmUe8P2yMpyCufe3eG14Iuoa',
-                  consumer_secret='jYLCmQ5vEesvRxBlb4Lcu2LFqhER4swm8z5CwQVYd3fG3O0Yhi',
-                  access_token_key='3029454813-pwXSKciyjFQ2Ut7tqPAYdv1IH1N24q8w0smDBQQ',
-                  access_token_secret='lC3ejCcEsmjKpb9SGpLcykg1lqD0a8NAlf9jgD3hdipNM')
+headers = {'X-RapidAPI-Key': RAPID_API_KEY}
+
+api = twitter.Api(consumer_key=TWITTER_CONSUMER,
+                  consumer_secret=TWITTER_CONSUMER_SECRET,
+                  access_token_key=TWITTER_ACCESS,
+                  access_token_secret=TWITTER_ACCESS_SECRET)
 
 results = api.GetSearch(raw_query='q=from%3ArealDonaldTrump&tweet_mode=extended')
 
@@ -22,18 +29,17 @@ syllables = []
 pucntuation = {}
 
 for index, word in enumerate(words):
-    only_punctuation = True
 
     for letter in word:
         if not (letter.isalnum() or letter == "'"):
             pucntuation[index] = letter
-        else:
-            only_punctuation = False
 
-    if only_punctuation:
-        syllables.append(-1)
+    word_to_count = re.sub(r"[^A-Za-z']+", '', word)
+
+    if word_to_count == '':
+        syllables.append(word)
     else:
-        word_to_count = re.sub(r"[^A-Za-z']+", '', word)
+
         response = requests.get(f"https://wordsapiv1.p.rapidapi.com/words/{word_to_count}/",
                                 headers=headers
                                 )
@@ -55,7 +61,7 @@ for index, word in enumerate(syllables):
     elif word == 4:
         final_tweet += 'pikapika'
     elif word != -1:
-        final_tweet += str(word)
+        final_tweet += words[index]
 
     if index in pucntuation:
         final_tweet += pucntuation[index]
