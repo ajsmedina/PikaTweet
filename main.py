@@ -19,6 +19,27 @@ api = twitter.Api(consumer_key=TWITTER_CONSUMER,
                   access_token_key=TWITTER_ACCESS,
                   access_token_secret=TWITTER_ACCESS_SECRET)
 
+
+def generate_pika(syllables, start_pi, is_capital, is_capslock):
+    use_pi = start_pi or syllables > 1
+    word_to_return = ''
+
+    for i in range(syllables):
+        if use_pi:
+            if i == syllables - 1 and syllables > 1:
+                word_to_return += 'CHU' if is_capslock else 'chu'
+            else:
+                word_to_return += 'P' if is_capslock or (is_capital and i == 0) else 'p'
+                word_to_return += 'I' if is_capslock else 'i'
+        else:
+            word_to_return += 'K' if is_capslock or (is_capital and i == 0) else 'k'
+            word_to_return += 'A' if is_capslock else 'a'
+
+        use_pi = not use_pi
+
+    return word_to_return
+
+
 results = api.GetSearch(raw_query='q=from%3ArealDonaldTrump&tweet_mode=extended')
 
 tweet = unescape(json.loads(results[0].AsJsonString())['full_text'])
@@ -63,30 +84,24 @@ for index, word in enumerate(words):
             syllables.append(1)
 
 final_tweet = ''
+use_pi = False
 for index, word in enumerate(syllables):
-    final_tweet += word_info[index]['punctuation_before']
-    # TODO: automate this based on my rules
+    info = word_info[index]
 
-    if word > 0:
-        final_tweet += 'P' if word_info[index]['capital'] else 'p'
-        if word == 1:
-            final_tweet += 'I' if word_info[index]['capslock'] else 'i'
-        elif word == 2:
-            final_tweet += 'ika'
-        elif word == 3:
-            final_tweet += 'ikachu'
-        elif word == 4:
-            final_tweet += 'ikapika'
+    if word > 1:
+        use_pi = False
+    else:
+        use_pi = not use_pi
+    if info['punctuation_before'] == '#' or info['punctuation_before'] == '@':
+        final_tweet += words[index]
+    elif word > 0:
 
-    final_tweet += word_info[index]['punctuation_after']
+        final_tweet += info['punctuation_before']
+        final_tweet += generate_pika(word, use_pi, info['capital'], info['capslock'])
+        final_tweet += info['punctuation_after']
+
+    if not info['punctuation_after'] == '':
+        use_pi = False
     final_tweet += ' '
 
 print(final_tweet)
-
-# breakdown:
-# 1 syllable: alternate pi ka (I don't know -> Pi ka pi)
-# 2+ syllables mod 2 or mod 0, pikachu  (beautiful -> pikachu) (hippopotamus -> pikapikachu)
-# 2 syllables to 1 syllable: pika pi
-# 1 syllable to 2 syllables: pi pika
-
-# TODO: preserve capitalization
