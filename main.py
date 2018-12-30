@@ -108,7 +108,9 @@ def create_word_info(words):
 
 
 results = api.GetSearch(raw_query='q=from%3ArealDonaldTrump&tweet_mode=extended')
-
+results_url = api.GetSearch(raw_query='q=from%3ArealDonaldTrump')
+url = re.sub(r"/web", '', json.loads(results_url[0].AsJsonString())['urls'][0]['expanded_url'])
+print(url)
 tweet = unescape(json.loads(results[0].AsJsonString())['full_text'])
 print(tweet)
 
@@ -117,3 +119,4 @@ word_info = create_word_info(words)
 new_tweet = generate_tweet(words, word_info)
 
 print(new_tweet)
+api.PostUpdate(new_tweet, attachment_url=url)
