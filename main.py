@@ -22,6 +22,32 @@ api = twitter.Api(consumer_key=TWITTER_CONSUMER,
                   access_token_secret=TWITTER_ACCESS_SECRET)
 
 
+def generate_tweet(words, word_info):
+    final_tweet = ''
+    start_pi = False
+
+    for index, info in enumerate(word_info):
+
+        if info.syllables > 1:
+            start_pi = False
+        else:
+            start_pi = not start_pi
+
+        if info.punctuation_before == '#' or info.punctuation_before == '@':
+            final_tweet += words[index]
+        elif info.syllables > 0:
+            final_tweet += info.punctuation_before
+            final_tweet += generate_pika(info.syllables, start_pi, info.is_capital, info.is_capslock)
+            final_tweet += info.punctuation_after
+
+        if not info.punctuation_after == '':
+            start_pi = False
+
+        final_tweet += ' '
+
+    return final_tweet
+
+
 def generate_pika(syllables, start_pi, is_capital, is_capslock):
     use_pi = start_pi or syllables > 1
     word_to_return = ''
@@ -42,6 +68,44 @@ def generate_pika(syllables, start_pi, is_capital, is_capslock):
     return word_to_return
 
 
+def create_word_info(words):
+    word_info = []
+    for index, original_word in enumerate(words):
+        new_word = word.Word()
+
+        if original_word.isupper():
+            new_word.is_capslock = True
+
+        before = True
+        for letter in original_word:
+            if not (letter.isalpha() or letter == "’"):
+                if before:
+                    new_word.punctuation_before += letter
+                else:
+                    new_word.punctuation_after += letter
+            elif before:
+                if letter.isalpha() and letter.isupper():
+                    new_word.is_capital = True
+                before = False
+
+        word_to_count = re.sub(r"[^A-Za-z']+", '', original_word)
+
+        if word_to_count == '':
+            new_word.syllables = -1
+        else:
+            response = requests.get(f"https://wordsapiv1.p.rapidapi.com/words/{word_to_count}/",
+                                    headers=headers
+                                    )
+            word_obj = json.loads(response.text)
+            if 'syllables' in word_obj:
+                new_word.syllables = word_obj['syllables']['count']
+            else:
+                new_word.syllables = 1
+
+        word_info.append(new_word)
+
+    return word_info
+
 
 results = api.GetSearch(raw_query='q=from%3ArealDonaldTrump&tweet_mode=extended')
 
@@ -49,63 +113,7 @@ tweet = unescape(json.loads(results[0].AsJsonString())['full_text'])
 print(tweet)
 
 words = tweet.split(' ')
-syllables = []
-word_info = []
+word_info = create_word_info(words)
+new_tweet = generate_tweet(words, word_info)
 
-for index, num_syllables in enumerate(words):
-    new_word = word.Word()
-
-    if num_syllables.isupper():
-        new_word.is_capslock = True
-
-    before = True
-    for letter in num_syllables:
-        if not (letter.isalpha() or letter == "’"):
-            if before:
-                new_word.punctuation_before += letter
-            else:
-                new_word.punctuation_after += letter
-        elif before:
-            if letter.isalpha() and letter.isupper():
-                new_word.is_capital = True
-            before = False
-
-    word_to_count = re.sub(r"[^A-Za-z']+", '', num_syllables)
-
-    if word_to_count == '':
-        new_word.syllables = -1
-    else:
-
-        response = requests.get(f"https://wordsapiv1.p.rapidapi.com/words/{word_to_count}/",
-                                headers=headers
-                                )
-        word_obj = json.loads(response.text)
-        if 'syllables' in word_obj:
-            new_word.syllables = word_obj['syllables']['count']
-        else:
-            new_word.syllables = 1
-
-    word_info.append(new_word)
-
-final_tweet = ''
-use_pi = False
-for index, info in enumerate(word_info):
-    num_syllables = info.syllables
-
-    if num_syllables > 1:
-        use_pi = False
-    else:
-        use_pi = not use_pi
-    if info.punctuation_before == '#' or info.punctuation_before == '@':
-        final_tweet += words[index]
-    elif num_syllables > 0:
-
-        final_tweet += info.punctuation_before
-        final_tweet += generate_pika(num_syllables, use_pi, info.is_capital, info.is_capslock)
-        final_tweet += info.punctuation_after
-
-    if not info.punctuation_after == '':
-        use_pi = False
-    final_tweet += ' '
-
-print(final_tweet)
+print(new_tweet)
