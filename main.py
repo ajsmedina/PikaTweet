@@ -13,6 +13,7 @@ TWITTER_CONSUMER = os.environ['TWITTER_CONSUMER']
 TWITTER_CONSUMER_SECRET = os.environ['TWITTER_CONSUMER_SECRET']
 TWITTER_ACCESS = os.environ['TWITTER_ACCESS']
 TWITTER_ACCESS_SECRET = os.environ['TWITTER_ACCESS_SECRET']
+TWITTER_HANDLE = 'realDonaldTrump'
 
 headers = {'X-RapidAPI-Key': RAPID_API_KEY}
 
@@ -107,8 +108,8 @@ def create_word_info(words):
     return word_info
 
 
-results = api.GetSearch(raw_query='q=from%3ArealDonaldTrump&tweet_mode=extended')
-results_url = api.GetSearch(raw_query='q=from%3ArealDonaldTrump')
+results = api.GetSearch(raw_query=f'q=from%3A{TWITTER_HANDLE}&tweet_mode=extended')
+results_url = api.GetSearch(raw_query=f'q=from%3A{TWITTER_HANDLE}')
 id_str = json.loads(results_url[0].AsJsonString())['id_str']
 tweet = unescape(json.loads(results[0].AsJsonString())['full_text'])
 print(tweet)
@@ -118,6 +119,6 @@ word_info = create_word_info(words)
 new_tweet = generate_tweet(words, word_info)
 
 print(new_tweet)
-url = f'https://twitter.com/realDonaldTrump/status/{id_str}'
+url = f'https://twitter.com/{TWITTER_HANDLE}/status/{id_str}'
 print(url)
 api.PostUpdate(new_tweet, attachment_url=url)
