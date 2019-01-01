@@ -34,9 +34,9 @@ def generate_tweet(words, word_info):
         else:
             start_pi = not start_pi
 
-        if info.punctuation_before == '#' or info.punctuation_before == '@':
+        if '#' in info.punctuation_before or '@' in info.punctuation_before:
             final_tweet += words[index]
-        elif info.syllables > 0:
+        else:
             final_tweet += info.punctuation_before
             final_tweet += generate_pika(info.syllables, start_pi, info.is_capital, info.is_capslock)
             final_tweet += info.punctuation_after
